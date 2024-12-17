@@ -26,11 +26,14 @@ GRANT CREATE TABLE, CREATE USER TO Admin;
  SELECT * FROM USER_SYS_PRIVS;
 
 --Requete a executer 
+CONNECT Admin/manelAdminY8B ;
 SELECT * FROM DBAIOT.USERS;  -- Une erreur se produira car Admin n'a pas encore les privilèges de lecture sur la table USERS.
 
 
 --Donner a Admin le privilege de lecture
+CONNECT DBAIOT/tifoura123A ;
 GRANT SELECT ON DBAIOT.USERS TO Admin;
+CONNECT Admin/manelAdminY8B ;
 SELECT * FROM DBAIOT.USERS;
 
 
@@ -41,27 +44,34 @@ FROM DBAIOT.USERS U , DBAIOT.THING T
 WHERE U.IDUSER = T.IDUSER;  --Une erreur apparaîtra car Admin n'a pas les privilèges de création de vue ou de lecture sur la table THING.
 
 --Donner les privileges
+CONNECT DBAIOT/tifoura123A ;
 GRANT CREATE VIEW TO Admin;
 GRANT SELECT ON DBAIOT.THING TO Admin;
 
 -- Réessayez de créer la vue :
+CONNECT Admin/manelAdminY8B ;
 CREATE VIEW USER_THING AS
 SELECT U.IDUSER, U.LASTNAME, U.FIRSTNAME, T.MAC, T.THINGTYPE, T.PARAM
-FROM USERS U , THING T 
+FROM DBAIOT.USERS U , DBAIOT.THING T 
 WHERE U.IDUSER = T.IDUSER;
 
 --Creation dindex
-CREATE INDEX NAMESERVICE_IX ON DBAIOT.SERVICE(NAME); --Une erreur apparaîtra car Admin n'a pas les droits de création d'index.
+CREATE INDEX NAMESERVICE_IX ON DBAIOT.SERVICE(NAME); --Une erreur apparaîtra car Admin n'a pas les droits de création d'index et na pas acces a la table service.
 
 --Donner les privileges 
+CONNECT DBAIOT/tifoura123A ;
 GRANT CREATE ANY INDEX TO Admin;
+GRANT SELECT ON DBAIOT.SERVICE TO Admin ;
+
 -- Réessayez de créer l'index :
-CREATE INDEX NAMESERVICE_IX ON DBAIOT.SERVICE(NAME);
+CONNECT Admin/manelAdminY8B ;
+CREATE INDEX NAMESERVICE_IX ON DBAIOT.SERVICE(NAME); 
 
 
 --Enlever les privileges
+CONNECT DBAIOT/tifoura123A ;
 REVOKE
-CREATE TABLE, CREATE USER, CREATE VIEW, CREATE ANY INDEX, SELECT ON DBAIOT.USERS, SELECT ON DBAIOT.THING 
+CREATE TABLE, CREATE USER, CREATE VIEW, CREATE ANY INDEX, SELECT ON DBAIOT.USERS, SELECT ON DBAIOT.THING, SELECT ON DBAIOT.SERVICE 
 FROM Admin;
 
 --Verification
@@ -70,18 +80,22 @@ SELECT * FROM USER_SYS_PRIVS WHERE USERNAME = 'ADMIN'; --Aucun privilège ne dev
 
 
 --Creation de profil
-CREATE PROFILE IOT_Profil LIMIT
-    SESSIONS_PER_USER 3
-    CPU_PER_CALL 35000
-    CONNECT_TIME 90
-    LOGICAL_READS_PER_CALL 1200
-    PRIVATE_SGA 25K
-    IDLE_TIME 30
-    FAILED_LOGIN_ATTEMPTS 5
-    PASSWORD_LIFE_TIME 50
-    PASSWORD_REUSE_TIME 40
-    PASSWORD_GRACE_TIME 5
-    PASSWORD_LOCK_TIME 1;
+
+   
+CREATE PROFILE IOT_Profil
+LIMIT 
+    SESSIONS_PER_USER         3
+    CPU_PER_CALL              3500
+    CONNECT_TIME              90
+    LOGICAL_READS_PER_CALL    1200
+    PRIVATE_SGA               25K
+    IDLE_TIME                 30
+    FAILED_LOGIN_ATTEMPTS     5
+    PASSWORD_LIFE_TIME        50
+    PASSWORD_REUSE_TIME       40
+    PASSWORD_REUSE_MAX        UNLIMITED
+    PASSWORD_LOCK_TIME        1
+    PASSWORD_GRACE_TIME       5;
 
 --affectation du profil a admin
 ALTER USER Admin PROFILE IOT_Profil;
@@ -97,8 +111,10 @@ GRANT UPDATE ON DBAIOT.SUBSCRIBE TO SUBSCRIBE_MANAGER;
 
 --assigniationdu role a admin
 GRANT SUBSCRIBE_MANAGER TO Admin;
--- Vérification des autorisations : 
+-- Vérification des autorisations :
+CONNECT Admin/manelAdminY8B ; 
 SELECT * FROM ROLE_TAB_PRIVS WHERE ROLE = 'SUBSCRIBE_MANAGER';
+
 
 
 
